@@ -1,3 +1,65 @@
+# Flask imports
+from flask import Blueprint, jsonify, current_app, send_file
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import psycopg2
+import os
+
+# Define Blueprint
+predictor_bp = Blueprint('predictor', __name__, url_prefix='/predict')
+
+# Database connection
+def get_db_connection():
+    return psycopg2.connect(
+        dbname="economic_data-db",
+        user="postgres",
+        password="ManzanaOrganico1",
+        host="localhost",
+        port="5432"
+    )
+
+# Route to plot prediction data
+@predictor_bp.route('/plot', methods=['GET'])
+def plot_predictions():
+    try:
+        # Step 1: Fetch historical data
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT date, MXN_USD FROM economic_data
+            WHERE date >= '2023-11-01'
+            ORDER BY date;
+        """)
+        historical_data = cursor.fetchall()
+        
+        # Fetch forecast data (replace this with actual future forecast query)
+        cursor.execute("""
+            SELECT date, predicted_exchange_rate FROM forecast_data
+            WHERE date >= '2024-11-01' AND date <= '2025-03-31'
+            ORDER BY date;
+        """)
+        forecast_data = cursor.fetchall()
+        
+        cursor.close()
+        conn.close()
+        
+        # Step 2: Convert to DataFrame
+        data = pd.DataFrame(historical_data, columns=['date', 'mxn_usd'])
+        future_data = pd.DataFrame(forecast_data, columns=['date', 'predicted_exchange_rate'])
+        
+        data['date'] = pd.to_datetime(data['date'])
+        future_data['date'] = pd.to_datetime(future_data['date'])
+        
+
+
+
+
+
+
+
+
 
 # Ensure 'date' columns are datetime objects
 data['date'] = pd.to_datetime(data['date'])
