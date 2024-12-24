@@ -5,6 +5,95 @@ data_ingestion
 @author: rober ugalde
 """
 
+# Flask imports
+from flask import Blueprint, jsonify, current_app
+import psycopg2
+import yfinance as yf
+import pandas as pd
+import requests
+from datetime import datetime
+
+# Blueprint Definition
+data_ingestion_bp = Blueprint('data_ingestion', __name__, url_prefix='/data')
+
+# Database Connection
+def get_db_connection():
+    return psycopg2.connect(
+        dbname="economic_data-db",
+        user="postgres",
+        password="ManzanaOrganico1",
+        host="localhost",
+        port="5432"
+    )
+
+# Route to trigger ingestion
+@data_ingestion_bp.route('/fetch', methods=['GET'])
+def fetch_data():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # ✅ Fetch Exchange Rate Data
+        ticker = "MXN=X"
+        data = yf.Ticker(ticker)
+        historical_data = data.history(period="10y")
+        historical_data.reset_index(inplace=True)
+        historical_data = historical_data[["Date", "Close"]]
+        historical_data.rename(columns={"Close": "Exchange Rate (MXN/USD)"}, inplace=True)
+        
+        for index, row in historical_data.iterrows():
+            date = row["Date"].strftime("%Y-%m-%d")
+            exchange_rate = row["Exchange Rate (MXN/USD)"]
+            cursor.execute("""
+                INSERT INTO economic_data (date, MXN_USD)
+                VALUES (%s, %s)
+                ON CONFLICT (date) DO UPDATE 
+                SET MXN_USD = EXCLUDED.MXN_USD;
+            """, (date, exchange_rate))
+        
+        # ✅ Fetch Other Data Sources (Example: Remittances)
+        url = "https://api.stlouisfed.org/fred/series/observations"
+        params = {
+            "series_id": "DDOI11MXA156NWDB",
+            "api_key": "a5e807df13889a6f9009c9bdea0d650f",
+            "file_type": "json",
+            "frequency": "a",
+            "observation_start": "2000-01-01",
+            "observation_end": "2024-12-31"
+        }
+        response = requests.get(url, params=params)
+        if response.status_code == 200:
+            observations = response.json()["observations"]
+            df = pd.DataFrame(observations)
+            df["date"] = pd.to_datetime(df["date"])
+            df["value"] = pd.to_numeric(df["value"], errors='coerce')
+            df = df.dropna(subset=["value"])
+            
+            for _, row in df.iterrows():
+                date = row["date"].date()
+                value = row["value"]
+                cursor.execute("""
+                    INSERT INTO economic_data (date, remittances)
+                    VALUES (%s, %s)
+                    ON CONFLICT (date) DO UPDATE 
+                    SET remittances = EXCLUDED.remittances;
+                """, (date, value))
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({"status": "success", "message": "Data ingestion completed successfully."})
+    
+    except Exception as e:
+        current_app.logger.error(f"Data ingestion failed: {e}")
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+
+
+
+
 
 #1 exchange_rate_data  saving data in economic_data-db=#
   
