@@ -14,3 +14,11 @@ gunicorn
 python-dotenv
 email-validator
 Werkzeug==2.3.7
+
+Flask
+SQLAlchemy
+psycopg2
+pandas
+yfinance
+APScheduler
+
