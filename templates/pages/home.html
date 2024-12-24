@@ -4,6 +4,10 @@
 Home
 {% endblock title %}
 
+
+
+
+
 {% block content %}
 {% if current_user.is_authenticated %}
 <h1>Welcome back</h1>
@@ -11,6 +15,11 @@ Home
 <a href="{{ url_for('auth.logout') }}">Logout</a>
 {% else %}
 <h1>Welcome to MXN-USD Predictor!</h1>
+<h1>by Rob Ugalde</h1>
+<p><a href="/api/data/fetch" class="btn btn-primary">Fetch Latest Data</a></p>
+<p><a href="/api/predict/predict" class="btn btn-success">Run Prediction</a></p>
+
+
 <p>You are not logged in.</p>
 <a href="{{ url_for('auth.login') }}">Login</a>
 {% endif %}
