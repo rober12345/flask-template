@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}
+MXN/USD Exchange Rate Prediction
+{% endblock %}
+
+{% block content %}
+<h1>MXN/USD Prediction Plot</h1>
+<p>This plot displays the predicted MXN/USD exchange rate from November 2024 to March 2025:</p>
+
+<!-- Display the plot image -->
+<div>
+    <img src="{{ url_for('static', filename='plots/forecast_plot.png') }}" 
+         alt="MXN/USD Forecast Plot"
+         style="width: 80%; max-width: 1000px; margin: 20px auto; display: block;"/>
+</div>
+
+<!-- Refresh Prediction Button -->
+<form action="{{ url_for('predictor.plot_predictions') }}" method="get">
+    <button type="submit" class="btn btn-primary">Refresh Prediction</button>
+</form>
+
+<!-- Handle Errors -->
+{% if error %}
+<div class="alert alert-danger mt-3">
+    <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+{% endblock %}
