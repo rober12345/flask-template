@@ -173,3 +173,49 @@ plt.grid(True)
 plt.tight_layout()
 plt.show()
 
+
+import os
+import matplotlib.pyplot as plt
+from flask import Blueprint, jsonify, current_app
+
+predictor_bp = Blueprint('predictor', __name__)
+
+@predictor_bp.route('/api/predict/plot', methods=['GET'])
+def generate_forecast_plot():
+    import pandas as pd
+    
+    # Example data for plotting
+    data = pd.DataFrame({
+        'date': pd.date_range(start='2024-11-01', end='2025-03-31'),
+        'mxn_usd': 18.5  # Replace this with your historical data
+    })
+    future_data = pd.DataFrame({
+        'date': pd.date_range(start='2024-11-01', end='2025-03-31'),
+        'predicted_exchange_rate': 18.7  # Replace with your predictions
+    })
+
+    # Plot settings
+    plot_path = os.path.join(current_app.root_path, 'static', 'plots', 'forecast_plot.png')
+
+    plt.figure(figsize=(20, 10))
+    plt.plot(data['date'], data['mxn_usd'], label='Historical Data', color='blue')
+    plt.plot(
+        future_data['date'],
+        future_data['predicted_exchange_rate'],
+        label='Forecast with Daily Fluctuations (Nov 2024 - Mar 2025)',
+        color='red',
+        linestyle='--'
+    )
+    plt.title('Daily MXN/USD Exchange Rate Forecast')
+    plt.xlabel('Date')
+    plt.ylabel('MXN/USD')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+
+    # Save the plot
+    plt.savefig(plot_path)
+    plt.close()
+
+    return jsonify({"status": "success", "plot_path": "/static/plots/forecast_plot.png"})
+
