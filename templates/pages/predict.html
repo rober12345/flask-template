@@ -1,6 +1,26 @@
 {% extends 'base.html' %}
 
 {% block title %}
+Forecast Plot
+{% endblock %}
+
+{% block content %}
+<h1>MXN/USD Forecast Plot</h1>
+<p>Below is the daily MXN/USD forecast with realistic fluctuations:</p>
+
+<img src="{{ url_for('static', filename='plots/forecast_plot.png') }}" 
+     alt="Forecast Plot" 
+     style="width:100%; max-width:800px; border:1px solid #ccc;">
+
+<p><a href="{{ url_for('predictor.generate_forecast_plot') }}" class="btn btn-primary">Refresh Plot</a></p>
+{% endblock %}
+
+
+
+
+{% extends 'base.html' %}
+
+{% block title %}
 MXN/USD Exchange Rate Prediction
 {% endblock %}
 
