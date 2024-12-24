@@ -1,6 +1,13 @@
 from flask import Blueprint
 from .predictor import predictor_bp
 from .data_ingestion import data_ingestion_bp
+from .predictor import predictor_bp
+
+api_bp.register_blueprint(predictor_bp, url_prefix='/predict')
+
+
+
+
 
 api_bp = Blueprint('api', __name__)
 api_bp.register_blueprint(predictor_bp, url_prefix='/predict')
