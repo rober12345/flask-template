@@ -1,3 +1,15 @@
+
+from flask import Blueprint
+from .data_ingestion import data_ingestion_bp
+
+api_bp = Blueprint('api', __name__)
+
+# Register API Blueprints
+api_bp.register_blueprint(data_ingestion_bp, url_prefix='/data')
+
+
+
+
 # Flask modules
 from flask import Blueprint, request
 from flask.wrappers import Response
