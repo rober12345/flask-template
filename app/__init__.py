@@ -1,3 +1,25 @@
+from app.utils.scheduler import start_scheduler
+
+def create_app():
+    app = Flask(__name__)
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:ManzanaOrganico1@localhost:5432/economic_data-db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+    db.init_app(app)
+    app.register_blueprint(api_bp, url_prefix='/api')
+
+    with app.app_context():
+        start_scheduler()
+    
+    return app
+
+
+
+
+
+
+
+
 # Flask modules
 from flask import Flask
 
