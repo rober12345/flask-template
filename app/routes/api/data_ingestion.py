@@ -169,10 +169,3 @@ def fetch_trade_balance():
 @data_ingestion_bp.route('/fetch_ipc_mexico', methods=['GET'])
 def fetch_ipc_mexico():
     return fetch_fred_data("SP500", "IPC_Mexico")
-
-
-## ✅ **3. Next Steps**
-
-1. Start Flask:
-   ```cmd
-   flask run
