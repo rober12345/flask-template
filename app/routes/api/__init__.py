@@ -1,51 +1,19 @@
-from flask import Blueprint
-from .predictor import predictor_bp
-from .data_ingestion import data_ingestion_bp
-from .predictor import predictor_bp
-
-api_bp.register_blueprint(predictor_bp, url_prefix='/predict')
-
-
-
-
-
-api_bp = Blueprint('api', __name__)
-api_bp.register_blueprint(predictor_bp, url_prefix='/predict')
-api_bp.register_blueprint(data_ingestion_bp, url_prefix='/data')
-
-
-
-
-from flask import Blueprint
-from .data_ingestion import data_ingestion_bp
-
-api_bp = Blueprint('api', __name__)
-
-# Register API Blueprints
-api_bp.register_blueprint(data_ingestion_bp, url_prefix='/data')
-
-
-
-
-# Flask modules
-from flask import Blueprint, request
-from flask.wrappers import Response
+# Flask imports
+from flask import Blueprint, request, Response
 from flask_limiter import ExemptionScope
 from werkzeug.exceptions import HTTPException
 from flask_limiter.errors import RateLimitExceeded
-
-# Other modules
 import logging
 
-# Local modules
+# Local imports
 from app.extensions import limiter
 from app.utils.api import error_response
 from app.utils.cache import get_cached_response, set_cached_response
 
-# Blueprint modules
-from .tests import tests_bp
-
+# Define the main API Blueprint
 api_bp = Blueprint("api", __name__, url_prefix="/api")
+
+# Exempt from rate limiting
 limiter.exempt(
     api_bp,
     flags=ExemptionScope.DEFAULT
@@ -53,7 +21,7 @@ limiter.exempt(
     | ExemptionScope.DESCENDENTS,
 )
 
-
+# Error handler
 @api_bp.errorhandler(Exception)
 def handle_error(error):
     if isinstance(error, RateLimitExceeded):
@@ -63,25 +31,31 @@ def handle_error(error):
         return error_response(error.description, error.code)
     else:
         logging.error(error)
-        return error_response()
+        return error_response("Internal Server Error", 500)
 
 
+# Before request handler (Cache Lookup)
 @api_bp.before_request
 def before_request():
-    # Attempt to fetch cached response
     cached_response = get_cached_response(request)
     if cached_response is not None:
         return cached_response
 
 
+# After request handler (Cache Store)
 @api_bp.after_request
 def after_request(response: Response):
     if response.headers.get("Is-Cached-Response") == "1":
-        # Remove internal cache header
         response.headers.remove("Is-Cached-Response")
-        # Cache the response
         set_cached_response(request, response)
     return response
 
 
-api_bp.register_blueprint(tests_bp)
+# Import and register sub-blueprints
+from .predictor import predictor_bp
+from .data_ingestion import data_ingestion_bp
+from .tests import tests_bp
+
+api_bp.register_blueprint(predictor_bp, url_prefix='/predict')
+api_bp.register_blueprint(data_ingestion_bp, url_prefix='/data')
+api_bp.register_blueprint(tests_bp, url_prefix='/tests')
