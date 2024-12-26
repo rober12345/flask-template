@@ -1,5 +1,5 @@
 # Flask imports
-from flask import Blueprint, jsonify, current_app, send_file
+from flask import Blueprint, jsonify, send_file, current_app
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -27,7 +27,7 @@ def plot_predictions():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Historical Data Query
+        # Fetch Historical Data
         cursor.execute("""
             SELECT date, MXN_USD FROM economic_data
             WHERE date >= '2023-11-01'
@@ -35,7 +35,7 @@ def plot_predictions():
         """)
         historical_data = cursor.fetchall()
         
-        # Forecast Data Query
+        # Fetch Forecast Data
         cursor.execute("""
             SELECT date, predicted_exchange_rate FROM forecast_data
             WHERE date >= '2024-11-01' AND date <= '2025-03-31'
@@ -110,3 +110,4 @@ def plot_predictions():
     
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
