@@ -170,7 +170,6 @@ def fetch_trade_balance():
 def fetch_ipc_mexico():
     return fetch_fred_data("SP500", "IPC_Mexico")
 
----
 
 ## ✅ **3. Next Steps**
 
