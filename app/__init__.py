@@ -1,37 +1,13 @@
-from app.utils.scheduler import start_scheduler
-
-def create_app():
-    app = Flask(__name__)
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:ManzanaOrganico1@localhost:5432/economic_data-db'
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    db.init_app(app)
-    app.register_blueprint(api_bp, url_prefix='/api')
-
-    with app.app_context():
-        start_scheduler()
-    
-    return app
-
-
-
-
-
-
-
-
-# Flask modules
 from flask import Flask
-
-# Other modules
 import os
 
+# Import your extensions
+from app.extensions import db, cors, csrf, cache, bcrypt, limiter, login_manager
 
 def create_app(debug: bool = False):
     # Check if debug environment variable was passed
     FLASK_DEBUG = os.environ.get("FLASK_DEBUG", False)
-    if FLASK_DEBUG:
-        debug = FLASK_DEBUG
+    debug = FLASK_DEBUG if FLASK_DEBUG else debug
 
     # Create the Flask application instance
     app = Flask(
@@ -41,25 +17,11 @@ def create_app(debug: bool = False):
         static_url_path="/",
     )
 
-    # Set current_app context
-    app.app_context().push()
-
-    if debug:
-        from app.config.dev import DevConfig
-
-        app.config.from_object(DevConfig)
-    else:
-        from app.config.prod import ProdConfig
-
-        app.config.from_object(ProdConfig)
-
-    # Uncomment to enable logger
-    # from app.utils.logger import setup_flask_logger
-    # setup_flask_logger()
+    # Configure the app
+    app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:ManzanaOrganico1@localhost:5432/economic_data-db'
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
     # Initialize extensions
-    from app.extensions import db, cors, csrf, cache, bcrypt, limiter, login_manager
-
     db.init_app(app)
     cors.init_app(app)
     csrf.init_app(app)
@@ -68,20 +30,22 @@ def create_app(debug: bool = False):
     limiter.init_app(app)
     login_manager.init_app(app)
 
-    # Import all models and Create database tables
-    from app import models
+    # Import all models and create database tables
+    with app.app_context():
+        from app import models  # Adjust to your model import
+        db.create_all()
 
-    db.create_all()
+        # Start scheduler if necessary
+        from app.utils.scheduler import start_scheduler
+        start_scheduler()
 
-    # Register blueprints or routes
+    # Register blueprints
     from app.routes import api_bp, pages_bp, auth_bp
-
-    app.register_blueprint(api_bp)
+    app.register_blueprint(api_bp, url_prefix='/api')  # Ensure api_bp corresponds to your routes
     app.register_blueprint(auth_bp)
     app.register_blueprint(pages_bp)
 
-    # Global Ratelimit Checker
-    # this is used because auto_check is set to 'False'
+    # Global Rate Limit Checker
     app.before_request(lambda: limiter.check())
 
     return app
