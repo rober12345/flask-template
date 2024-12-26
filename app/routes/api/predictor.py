@@ -1,5 +1,5 @@
 # Flask imports
-from flask import Blueprint, jsonify, current_app, send_file
+from flask import Blueprint, jsonify, send_file, current_app
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -9,7 +9,7 @@ import os
 # Define Blueprint
 predictor_bp = Blueprint('predictor', __name__, url_prefix='/predict')
 
-# Database connection
+# Database connection function
 def get_db_connection():
     return psycopg2.connect(
         dbname="economic_data-db",
@@ -23,10 +23,11 @@ def get_db_connection():
 @predictor_bp.route('/plot', methods=['GET'])
 def plot_predictions():
     try:
-        # Step 1: Fetch historical data
+        # Step 1: Fetch historical and forecast data
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Fetch Historical Data
         cursor.execute("""
             SELECT date, MXN_USD FROM economic_data
             WHERE date >= '2023-11-01'
@@ -34,7 +35,7 @@ def plot_predictions():
         """)
         historical_data = cursor.fetchall()
         
-        # Fetch forecast data (replace this with actual future forecast query)
+        # Fetch Forecast Data
         cursor.execute("""
             SELECT date, predicted_exchange_rate FROM forecast_data
             WHERE date >= '2024-11-01' AND date <= '2025-03-31'
@@ -52,7 +53,7 @@ def plot_predictions():
         data['date'] = pd.to_datetime(data['date'])
         future_data['date'] = pd.to_datetime(future_data['date'])
         
-        # Step 3: Plot the data
+        # Step 3: Plot Data
         plt.figure(figsize=(20, 10))
         
         # Plot Historical Data
@@ -67,7 +68,7 @@ def plot_predictions():
             linestyle='--'
         )
         
-        # Add Markers for Key Dates
+        # Add Key Markers
         plt.axvline(pd.Timestamp('2024-11-01'), color='green', linestyle='--', label='Forecast Start (Nov 2024)')
         plt.axvline(pd.Timestamp('2025-01-01'), color='purple', linestyle='--', label='Forecast Start (Jan 2025)')
         plt.axvline(pd.Timestamp('2025-03-01'), color='orange', linestyle='--', label='Forecast Start (Mar 2025)')
@@ -85,7 +86,7 @@ def plot_predictions():
                 color='gray'
             )
         
-        # Format the x-axis
+        # Format the x-axis dates properly
         plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
         plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
         plt.gcf().autofmt_xdate()
@@ -98,124 +99,14 @@ def plot_predictions():
         plt.grid(True)
         plt.tight_layout()
         
-        # Step 4: Save plot as a static image
+        # Step 4: Save Plot
         plot_path = os.path.join(current_app.root_path, 'static', 'plots', 'forecast_plot.png')
+        os.makedirs(os.path.dirname(plot_path), exist_ok=True)
         plt.savefig(plot_path)
         plt.close()
         
-        return jsonify({"status": "success", "plot_path": "/static/plots/forecast_plot.png"})
+        # Step 5: Serve the Plot
+        return send_file(plot_path, mimetype='image/png', as_attachment=False)
     
     except Exception as e:
-        current_app.logger.error(f"Error generating plot: {e}")
         return jsonify({"error": str(e)}), 500
-
-
-
-
-
-
-
-# Ensure 'date' columns are datetime objects
-data['date'] = pd.to_datetime(data['date'])
-future_data['date'] = pd.to_datetime(future_data['date'])
-
-# Verify alignment
-print(data[['date', 'mxn_usd']].tail())
-print(future_data[['date', 'predicted_exchange_rate']].head())
-
-
-
-import matplotlib.dates as mdates
-
-plt.figure(figsize=(20, 10))
-
-# Plot Historical Data
-plt.plot(data['date'], data['mxn_usd'], label='Historical Data', color='blue')
-
-# Plot Forecast Data with Fluctuations
-plt.plot(
-    future_data['date'],
-    future_data['predicted_exchange_rate'],
-    label='Forecast with Daily Fluctuations (Nov 2024 - Mar 2025)',
-    color='red',
-    linestyle='--'
-)
-
-# Add Markers for Key Dates
-plt.axvline(pd.Timestamp('2024-11-01'), color='green', linestyle='--', label='Forecast Start (Nov 2024)')
-plt.axvline(pd.Timestamp('2025-01-01'), color='purple', linestyle='--', label='Forecast Start (Jan 2025)')
-plt.axvline(pd.Timestamp('2025-03-01'), color='orange', linestyle='--', label='Forecast Start (Mar 2025)')
-
-# Add Monthly Dividers
-for month_start in pd.date_range(start='2024-11-01', end='2025-03-31', freq='MS'):
-    plt.axvline(month_start, color='gray', linestyle=':', alpha=0.6)
-    plt.text(
-        month_start,
-        plt.ylim()[1] * 0.95,
-        month_start.strftime('%b %Y'),
-        rotation=90,
-        verticalalignment='center',
-        fontsize=9,
-        color='gray'
-    )
-
-# Format the x-axis dates properly
-plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-plt.gca().xaxis.set_major_locator(mdates.MonthLocator())
-plt.gcf().autofmt_xdate()  # Rotate date labels for clarity
-
-# Labels and Legend
-plt.title('Daily MXN/USD Exchange Rate Forecast with Realistic Fluctuations (Nov 2024 - Mar 2025)')
-plt.xlabel('Date')
-plt.ylabel('MXN/USD')
-plt.legend()
-plt.grid(True)
-plt.tight_layout()
-plt.show()
-
-
-import os
-import matplotlib.pyplot as plt
-from flask import Blueprint, jsonify, current_app
-
-predictor_bp = Blueprint('predictor', __name__)
-
-@predictor_bp.route('/api/predict/plot', methods=['GET'])
-def generate_forecast_plot():
-    import pandas as pd
-    
-    # Example data for plotting
-    data = pd.DataFrame({
-        'date': pd.date_range(start='2024-11-01', end='2025-03-31'),
-        'mxn_usd': 18.5  # Replace this with your historical data
-    })
-    future_data = pd.DataFrame({
-        'date': pd.date_range(start='2024-11-01', end='2025-03-31'),
-        'predicted_exchange_rate': 18.7  # Replace with your predictions
-    })
-
-    # Plot settings
-    plot_path = os.path.join(current_app.root_path, 'static', 'plots', 'forecast_plot.png')
-
-    plt.figure(figsize=(20, 10))
-    plt.plot(data['date'], data['mxn_usd'], label='Historical Data', color='blue')
-    plt.plot(
-        future_data['date'],
-        future_data['predicted_exchange_rate'],
-        label='Forecast with Daily Fluctuations (Nov 2024 - Mar 2025)',
-        color='red',
-        linestyle='--'
-    )
-    plt.title('Daily MXN/USD Exchange Rate Forecast')
-    plt.xlabel('Date')
-    plt.ylabel('MXN/USD')
-    plt.legend()
-    plt.grid(True)
-    plt.tight_layout()
-
-    # Save the plot
-    plt.savefig(plot_path)
-    plt.close()
-
-    return jsonify({"status": "success", "plot_path": "/static/plots/forecast_plot.png"})
-
