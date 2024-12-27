@@ -47,6 +47,10 @@ def create_app(debug: bool = False):
     app.register_blueprint(auth_bp)
     app.register_blueprint(pages_bp)
 
+    # Print the URL map to see available routes
+    print(app.url_map)
+
+    
     # Global Rate Limit Checker
     app.before_request(lambda: limiter.check())
 
