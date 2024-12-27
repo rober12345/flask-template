@@ -1,4 +1,5 @@
 from flask import Flask
+from app.routes.api.predictor import predictor_bp
 import os
 
 # Import your extensions
@@ -41,7 +42,8 @@ def create_app(debug: bool = False):
 
     # Register blueprints
     from app.routes import api_bp, pages_bp, auth_bp
-    app.register_blueprint(api_bp, url_prefix='/api')  # Ensure api_bp corresponds to your routes
+    app = Flask(__name__)
+    app.register_blueprint(predictor_bp, url_prefix='/api')  # Ensure api_bp corresponds to your routes modified to predictor_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(pages_bp)
 
