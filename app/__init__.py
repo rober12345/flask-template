@@ -41,16 +41,14 @@ def create_app(debug: bool = False):
         start_scheduler()
 
     # Register blueprints
+    app.register_blueprint(predictor_bp, url_prefix='/api')  # Register the predictor blueprint
     from app.routes import api_bp, pages_bp, auth_bp
-    app = Flask(__name__)
-    app.register_blueprint(predictor_bp, url_prefix='/api')  # Ensure api_bp corresponds to your routes modified to predictor_bp
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(pages_bp)
+    app.register_blueprint(auth_bp)  # Register authentication blueprint
+    app.register_blueprint(pages_bp)  # Register pages blueprint
 
     # Print the URL map to see available routes
     print(app.url_map)
 
-    
     # Global Rate Limit Checker
     app.before_request(lambda: limiter.check())
 
