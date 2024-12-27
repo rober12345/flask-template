@@ -1,9 +1,10 @@
 from flask import Flask
-from app.routes.api.predictor import predictor_bp
 import os
 
 # Import your extensions
 from app.extensions import db, cors, csrf, cache, bcrypt, limiter, login_manager
+from app.routes.api.predictor import predictor_bp
+from app.routes.api.data_ingestion import data_ingestion_bp  # Import data ingestion blueprint
 
 def create_app(debug: bool = False):
     # Check if debug environment variable was passed
@@ -41,10 +42,12 @@ def create_app(debug: bool = False):
         start_scheduler()
 
     # Register blueprints
-    app.register_blueprint(predictor_bp, url_prefix='/api')  # Register the predictor blueprint
-    from app.routes import api_bp, pages_bp, auth_bp
-    app.register_blueprint(auth_bp)  # Register authentication blueprint
-    app.register_blueprint(pages_bp)  # Register pages blueprint
+    app.register_blueprint(predictor_bp, url_prefix='/api/predict')  # Register predictor with prefix
+    app.register_blueprint(data_ingestion_bp, url_prefix='/api/data')  # Register data ingestion
+    # Register other blueprints as needed
+    from app.routes import auth_bp, pages_bp
+    app.register_blueprint(auth_bp)
+    app.register_blueprint(pages_bp)
 
     # Print the URL map to see available routes
     print(app.url_map)
