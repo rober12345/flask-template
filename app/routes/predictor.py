@@ -6,7 +6,7 @@ import psycopg2
 import os
 
 # Define Blueprint
-predictor_bp = Blueprint('predictor', __name__)
+predictor_bp = Blueprint('predictor', __name__, url_prefix='/predict')
 
 # Database connection function
 def get_db_connection():
